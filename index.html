@@ -268,13 +268,17 @@
             </div>
         </main>
         
-        <nav class="md:hidden fixed bottom-0 left-0 right-0 bg-slate-900/50 backdrop-blur-lg border-t border-slate-800 flex justify-around p-2 z-50">
+        <nav class="md:hidden fixed bottom-0 left-0 right-0 bg-slate-900/50 backdrop-blur-lg border-t border-slate-800 flex justify-around p-1 z-50">
             <button class="nav-btn flex-1 flex flex-col items-center justify-center p-2 rounded-lg" data-tab="dashboard"><svg class="w-6 h-6 mb-1" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="m3 9 9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/><polyline points="9 22 9 12 15 12 15 22"/></svg><span class="text-xs">Dash</span></button>
             <button class="nav-btn flex-1 flex flex-col items-center justify-center p-2 rounded-lg" data-tab="food"><svg class="w-6 h-6 mb-1" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 2v7c0 1.1.9 2 2 2h4a2 2 0 0 0 2-2V2"/><path d="M17 2v7c0 1.1.9 2 2 2h4a2 2 0 0 0 2-2V2"/><path d="M7 11v11"/><path d="M17 11v11"/></svg><span class="text-xs">Food</span></button>
             <button class="nav-btn flex-1 flex flex-col items-center justify-center p-2 rounded-lg" data-tab="workout"><svg class="w-6 h-6 mb-1" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M18 8L22 12L18 16"/><path d="M6 8L2 12L6 16"/><path d="M12.5 4L11.5 20"/></svg><span class="text-xs">Workout</span></button>
+            <button class="nav-btn flex-1 flex flex-col items-center justify-center p-2 rounded-lg" data-tab="activity"><svg class="w-6 h-6 mb-1" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12h14"/><path d="m12 5 7 7-7 7"/></svg><span class="text-xs">Activity</span></button>
             <button class="nav-btn flex-1 flex flex-col items-center justify-center p-2 rounded-lg" data-tab="money"><svg class="w-6 h-6 mb-1" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect width="20" height="12" x="2" y="6" rx="2"/><circle cx="12" cy="12" r="2"/></svg><span class="text-xs">Money</span></button>
-            <button id="end-day-btn-mobile" class="flex-1 flex flex-col items-center justify-center p-2 rounded-lg text-amber-300"><svg class="w-6 h-6 mb-1" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 3v1"/><path d="M21 12h-1"/><path d="M3 12H2"/><path d="m18.364 5.636-.707.707"/><path d="m6.343 17.657-.707.707"/><path d="M12 21v-1"/><path d="m5.636 5.636.707.707"/><path d="m17.657 17.657.707.707"/><circle cx="12" cy="12" r="4"/></svg><span class="text-xs">End Day</span></button>
+            <button class="nav-btn flex-1 flex flex-col items-center justify-center p-2 rounded-lg" data-tab="profile"><svg class="w-6 h-6 mb-1" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M19 21v-2a4 4 0 0 0-4-4H9a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg><span class="text-xs">Profile</span></button>
         </nav>
+        <button id="end-day-btn-mobile" class="md:hidden fixed bottom-20 right-4 z-40 bg-amber-500 text-white w-14 h-14 rounded-full flex items-center justify-center shadow-lg hover:bg-amber-400 transition-colors">
+            <svg class="w-7 h-7" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 3v1"/><path d="M21 12h-1"/><path d="M3 12H2"/><path d="m18.364 5.636-.707.707"/><path d="m6.343 17.657-.707.707"/><path d="M12 21v-1"/><path d="m5.636 5.636.707.707"/><path d="m17.657 17.657.707.707"/><circle cx="12" cy="12" r="4"/></svg>
+        </button>
     </div>
 
     <div id="end-day-modal" class="hidden fixed inset-0 bg-black/70 backdrop-blur-md z-50 flex items-center justify-center p-4">
@@ -309,8 +313,8 @@
         // --- State Variables ---
         let userData = {};
         let dailyLog = [];
-        let historicalLog = []; // <-- NEW: For long-term storage
-        let selectedGoal = 'maintain'; // Default for onboarding
+        let historicalLog = []; 
+        let selectedGoal = 'maintain';
         let DAILY_CALORIE_GOAL = 2000;
         let MONTHLY_BUDGET = 50000;
 
@@ -353,10 +357,14 @@
         ];
         
         // --- Core Rendering Functions ---
+        // ===========================================
+        // == FIXED: DYNAMIC DASHBOARD RENDERING =====
+        // ===========================================
         function renderDashboard() {
             const dashboardEl = document.getElementById('dashboard');
-            const logSummary = renderDailyLog();
+            const logSummary = renderDailyLog(); // Calculate current day's totals
             
+            // Inject the dynamic values from logSummary into the HTML
             dashboardEl.innerHTML = `
                 <h1 class="text-3xl font-bold mb-2">Welcome back, ${userData.name.split(' ')[0]}!</h1>
                 <p class="text-slate-400 mb-8">Here's your summary for today.</p>
@@ -395,6 +403,8 @@
                     </div>
                 </div>
             `;
+            // Call animation after the HTML is rendered
+            animateCounters();
         }
         function renderFood() {
             const foodEl = document.getElementById('food');
@@ -720,9 +730,6 @@
             localStorage.setItem('dailyLog', JSON.stringify(dailyLog)); 
             const currentTab = document.querySelector('.tab-content.active')?.id || 'dashboard';
             renderTabContent(currentTab);
-            if (currentTab === 'dashboard') {
-                animateCounters();
-            }
         }
         function showToast(message, type = 'success') {
             const toast = document.getElementById('toast');
@@ -756,6 +763,63 @@
             tabContents.forEach(content => content.classList.toggle('active', content.id === tabId));
             renderTabContent(tabId);
         }
+
+        // ===================================
+        // == NEW: CHART DATA PROCESSOR ======
+        // ===================================
+        function getHistoricalDataForChart(days) {
+            const allLogs = [...historicalLog, ...dailyLog];
+            const dataMap = new Map();
+            const labels = [];
+
+            // Initialize map and labels for the past 'days'
+            for (let i = 0; i < days; i++) {
+                const date = new Date();
+                date.setDate(date.getDate() - i);
+                const dateKey = date.toDateString(); // "Fri Oct 17 2025"
+                labels.unshift(date.toLocaleDateString('en-US', { weekday: 'short' })); // "Fri"
+                if (!dataMap.has(dateKey)) {
+                    dataMap.set(dateKey, { consumed: 0, burned: 0, expenses: 0 });
+                }
+            }
+
+            // Populate map with data from logs
+            allLogs.forEach(log => {
+                const logDateKey = new Date(log.timestamp).toDateString();
+                if (dataMap.has(logDateKey)) {
+                    const dayData = dataMap.get(logDateKey);
+                    if (log.type === 'food') dayData.consumed += log.calories;
+                    if (log.type === 'workout' || log.type === 'activity') dayData.burned += log.calories;
+                    if (log.type === 'expense') dayData.expenses += log.amount;
+                }
+            });
+            
+            // Convert map data to arrays for the chart
+            const chartData = {
+                labels: [],
+                consumed: [],
+                burned: [],
+                expenses: [],
+                netCalories: []
+            };
+
+            const sortedKeys = Array.from(dataMap.keys()).reverse();
+            
+            chartData.labels = days > 7 
+                ? Array.from({length: days}, (_, i) => `${i+1}`) // For 30-day view, just show numbers
+                : labels; // For 7-day view, show 'Mon', 'Tue', etc.
+            
+            sortedKeys.forEach(key => {
+                const dayData = dataMap.get(key);
+                chartData.consumed.push(dayData.consumed);
+                chartData.burned.push(dayData.burned);
+                chartData.expenses.push(dayData.expenses);
+                chartData.netCalories.push(dayData.consumed - dayData.burned);
+            });
+            
+            return chartData;
+        }
+
         function initCharts() {
             const chartOptions = {
                 responsive: true, maintainAspectRatio: false,
@@ -773,16 +837,20 @@
             destroyChart(expensesTrendChart);
             destroyChart(expenseCategoriesChart);
             destroyChart(calorieSourcesChart);
-
+            
+            // ===================================
+            // == FIXED: DYNAMIC WEEKLY CHARTS ===
+            // ===================================
             if (document.getElementById('calories-chart')) {
-                 const caloriesCtx = document.getElementById('calories-chart').getContext('2d');
+                const weeklyData = getHistoricalDataForChart(7);
+                const caloriesCtx = document.getElementById('calories-chart').getContext('2d');
                 caloriesChart = new Chart(caloriesCtx, {
                     type: 'bar',
                     data: {
-                    labels: ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun'],
+                    labels: weeklyData.labels,
                     datasets: [
-                        { label: 'Consumed', data: [1200, 1500, 1800, 1400, 2000, 1600, 1300], backgroundColor: 'rgba(74, 222, 128, 0.7)', borderColor: 'rgba(74, 222, 128, 1)', borderWidth: 1 },
-                        { label: 'Burned', data: [800, 900, 1000, 700, 1200, 950, 850], backgroundColor: 'rgba(239, 68, 68, 0.7)', borderColor: 'rgba(239, 68, 68, 1)', borderWidth: 1 }
+                        { label: 'Consumed', data: weeklyData.consumed, backgroundColor: 'rgba(74, 222, 128, 0.7)', borderColor: 'rgba(74, 222, 128, 1)', borderWidth: 1 },
+                        { label: 'Burned', data: weeklyData.burned, backgroundColor: 'rgba(239, 68, 68, 0.7)', borderColor: 'rgba(239, 68, 68, 1)', borderWidth: 1 }
                     ]
                     },
                     options: chartOptions
@@ -790,69 +858,43 @@
             }
            
             if (document.getElementById('expenses-chart')) {
-                 const expensesCtx = document.getElementById('expenses-chart').getContext('2d');
+                const weeklyData = getHistoricalDataForChart(7);
+                const expensesCtx = document.getElementById('expenses-chart').getContext('2d');
                 expensesChart = new Chart(expensesCtx, {
                     type: 'line',
                     data: {
-                    labels: ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun'],
-                    datasets: [{ label: 'Expenses (₹)', data: [800, 1200, 600, 1500, 900, 2000, 700], borderColor: 'rgba(56, 189, 248, 1)', backgroundColor: 'rgba(56, 189, 248, 0.1)', borderWidth: 3, fill: true, tension: 0.4 }]
+                    labels: weeklyData.labels,
+                    datasets: [{ label: 'Expenses (₹)', data: weeklyData.expenses, borderColor: 'rgba(56, 189, 248, 1)', backgroundColor: 'rgba(56, 189, 248, 0.1)', borderWidth: 3, fill: true, tension: 0.4 }]
                     },
                     options: chartOptions
                 });
             }
             
-             const trendOptions = { ...chartOptions, plugins: { legend: { display: false } }, scales: { ...chartOptions.scales, x: { ...chartOptions.scales.x, ticks: { display: false } } }};
+            const trendOptions = { ...chartOptions, plugins: { legend: { display: false } }, scales: { ...chartOptions.scales, x: { ...chartOptions.scales.x, ticks: { display: false } } }};
 
             if (document.getElementById('calories-trend-chart')) {
+                const monthlyData = getHistoricalDataForChart(30);
                 const caloriesTrendCtx = document.getElementById('calories-trend-chart').getContext('2d');
                 caloriesTrendChart = new Chart(caloriesTrendCtx, {
                     type: 'line',
                     data: {
-                    labels: Array.from({length: 30}, (_, i) => `Day ${i+1}`),
-                    datasets: [{ label: 'Net Calories', data: Array.from({length: 30}, () => Math.floor(Math.random() * 1000) - 500), borderColor: 'rgba(139, 92, 246, 1)', backgroundColor: 'rgba(139, 92, 246, 0.1)', borderWidth: 2, fill: true, tension: 0.4 }]
+                    labels: monthlyData.labels,
+                    datasets: [{ label: 'Net Calories', data: monthlyData.netCalories, borderColor: 'rgba(139, 92, 246, 1)', backgroundColor: 'rgba(139, 92, 246, 0.1)', borderWidth: 2, fill: true, tension: 0.4 }]
                     },
                     options: trendOptions
                 });
             }
 
             if(document.getElementById('expenses-trend-chart')) {
-                 const expensesTrendCtx = document.getElementById('expenses-trend-chart').getContext('2d');
+                const monthlyData = getHistoricalDataForChart(30);
+                const expensesTrendCtx = document.getElementById('expenses-trend-chart').getContext('2d');
                 expensesTrendChart = new Chart(expensesTrendCtx, {
                     type: 'line',
                     data: {
-                    labels: Array.from({length: 30}, (_, i) => `Day ${i+1}`),
-                    datasets: [{ label: 'Expenses (₹)', data: Array.from({length: 30}, () => Math.floor(Math.random() * 2000)), borderColor: 'rgba(56, 189, 248, 1)', backgroundColor: 'rgba(56, 189, 248, 0.1)', borderWidth: 2, fill: true, tension: 0.4 }]
+                    labels: monthlyData.labels,
+                    datasets: [{ label: 'Expenses (₹)', data: monthlyData.expenses, borderColor: 'rgba(56, 189, 248, 1)', backgroundColor: 'rgba(56, 189, 248, 0.1)', borderWidth: 2, fill: true, tension: 0.4 }]
                     },
                     options: trendOptions
-                });
-            }
-           
-            const doughnutOptions = {
-                responsive: true, maintainAspectRatio: false,
-                plugins: { legend: { position: 'bottom', labels: { color: '#e2e8f0' } } }
-            };
-
-            if (document.getElementById('expense-categories-chart')) {
-                const expenseCategoriesCtx = document.getElementById('expense-categories-chart').getContext('2d');
-                expenseCategoriesChart = new Chart(expenseCategoriesCtx, {
-                    type: 'doughnut',
-                    data: {
-                    labels: ['Food', 'Transport', 'Entertainment', 'Shopping', 'Utilities', 'Other'],
-                    datasets: [{ data: [30, 20, 15, 15, 10, 10], backgroundColor: ['#38bdf8', '#4ade80', '#a78bfa', '#facc15', '#fb923c', '#f87171'], borderWidth: 0 }]
-                    },
-                    options: doughnutOptions
-                });
-            }
-            
-            if (document.getElementById('calorie-sources-chart')) {
-                const calorieSourcesCtx = document.getElementById('calorie-sources-chart').getContext('2d');
-                calorieSourcesChart = new Chart(calorieSourcesCtx, {
-                    type: 'doughnut',
-                    data: {
-                    labels: ['Carbs', 'Protein', 'Fat'],
-                    datasets: [{ data: [50, 25, 25], backgroundColor: ['#facc15', '#4ade80', '#f87171'], borderWidth: 0 }]
-                    },
-                    options: doughnutOptions
                 });
             }
         }
@@ -922,14 +964,11 @@
 
              editGoalSelector.addEventListener('click', (e) => {
                 if(e.target.tagName === 'BUTTON') {
-                    // Visually update active button
                     editGoalSelector.querySelectorAll('.goal-btn').forEach(b => b.classList.remove('active'));
                     e.target.classList.add('active');
-                    // Store the selected goal on the save button for retrieval
                     document.getElementById('save-profile-btn').dataset.newGoal = e.target.dataset.goal;
                 }
             });
-            // Set initial goal on save button
             document.getElementById('save-profile-btn').dataset.newGoal = currentGoal;
         }
         function handleProfileSave() {
@@ -945,7 +984,7 @@
             DAILY_CALORIE_GOAL = userData.calorieGoal;
             
             showToast('Profile updated!', 'success');
-            renderProfile(); // This re-renders the profile, which implicitly hides the edit view.
+            renderProfile(); 
         }
 
         function animateCounters() {
@@ -956,26 +995,27 @@
                 const duration = 1000;
                 let start = 0;
                 const end = target;
-                if (end === 0) {
-                    counter.textContent = prefix + '0';
-                    return;
-                }
-                const increment = end / (duration / 10);
+                if (end === parseFloat(counter.textContent.replace(prefix, ''))) return; // Don't re-animate if value is same
                 
+                const frameDuration = 1000 / 60; // 60fps
+                const totalFrames = Math.round(duration / frameDuration);
+                const increment = end / totalFrames;
+                let currentFrame = 0;
+
                 const updateCounter = () => {
+                    currentFrame++;
                     start += increment;
-                    if (start < end) {
+                    if (currentFrame < totalFrames) {
                         counter.textContent = prefix + Math.ceil(start).toLocaleString();
-                        setTimeout(updateCounter, 10);
+                        requestAnimationFrame(updateCounter);
                     } else {
                         counter.textContent = prefix + end.toLocaleString();
                     }
                 };
-                updateCounter();
+                requestAnimationFrame(updateCounter);
             });
         }
         
-        // --- NEW Reporting Function ---
         function generateReport(days) {
             const now = new Date();
             const pastDate = new Date().setDate(now.getDate() - days);
@@ -1015,8 +1055,6 @@ User: ${userData.name}
 ### DETAILED LOG ###
 --------------------------------------------------
 `;
-
-            // Group items by date for detailed log
             const groupedByDate = reportData.reduce((acc, item) => {
                 const date = new Date(item.timestamp).toDateString();
                 if (!acc[date]) acc[date] = [];
@@ -1033,7 +1071,6 @@ User: ${userData.name}
                 });
             }
 
-            // Create a blob and trigger download
             const blob = new Blob([reportContent.trim()], { type: 'text/plain' });
             const link = document.createElement('a');
             link.href = URL.createObjectURL(blob);
@@ -1044,8 +1081,7 @@ User: ${userData.name}
             
             showToast('Report downloaded successfully!', 'success');
             
-            // Show the "Clear Data" button after a monthly report
-            if (days === 30) {
+            if (days >= 30 && historicalLog.length > 0) {
                 document.getElementById('clear-data-wrapper').classList.remove('hidden');
             }
         }
@@ -1059,7 +1095,6 @@ User: ${userData.name}
             
             DAILY_CALORIE_GOAL = userData.calorieGoal;
             MONTHLY_BUDGET = userData.budget;
-            // Load from local storage
             dailyLog = JSON.parse(localStorage.getItem('dailyLog')) || [];
             historicalLog = JSON.parse(localStorage.getItem('historicalLog')) || [];
             
@@ -1069,13 +1104,12 @@ User: ${userData.name}
             [endDayBtnDesktop, endDayBtnMobile].forEach(btn => btn.addEventListener('click', openEndDayModal));
             [closeModalBtn, cancelEndDayBtn].forEach(btn => btn.addEventListener('click', closeEndDayModal));
             
-            // MODIFIED End Day logic to archive data
             confirmEndDayBtn.addEventListener('click', () => { 
                 if (dailyLog.length > 0) {
-                    historicalLog.push(...dailyLog); // Add today's log to the history
+                    historicalLog.push(...dailyLog);
                     localStorage.setItem('historicalLog', JSON.stringify(historicalLog));
                 }
-                dailyLog = []; // Reset the daily log for the new day
+                dailyLog = []; 
                 localStorage.setItem('dailyLog', '[]');
                 showToast('Day archived. Ready for a new day!', 'success'); 
                 closeEndDayModal(); 
@@ -1084,7 +1118,6 @@ User: ${userData.name}
             switchTab('dashboard');
         }
 
-        // --- Onboarding Flow Logic ---
         function setupOnboarding() {
             const steps = document.querySelectorAll('.onboarding-step');
             const progressBar = document.getElementById('progress-bar');
@@ -1141,7 +1174,6 @@ User: ${userData.name}
             steps[0].classList.add('active');
         }
 
-        // --- Initializer ---
         document.addEventListener('DOMContentLoaded', () => {
             const storedUserData = localStorage.getItem('userData');
             if (storedUserData) {
