@@ -1,0 +1,1158 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>FitTrack AI - Premium Fitness & Finance Tracker</title>
+    
+    <script src="https://cdn.tailwindcss.com"></script>
+    
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
+    
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+
+    <style>
+        /* Custom Styles for Premium Look & Feel */
+        :root {
+            --dark-bg: #0D1117;
+            --accent-primary: #00A9FF;
+            --accent-secondary: #A855F7;
+            --text-primary: #F0F6FC;
+            --text-secondary: #8B949E;
+            --border-color: rgba(139, 148, 158, 0.2);
+        }
+
+        body {
+            font-family: 'Inter', sans-serif;
+            background-color: var(--dark-bg);
+            color: var(--text-primary);
+            overflow-x: hidden;
+        }
+
+        /* --- Interactive Aurora Background --- */
+        #blob {
+            background: linear-gradient(to right, var(--accent-primary), var(--accent-secondary));
+            height: 35vmax;
+            aspect-ratio: 1;
+            position: fixed;
+            left: 50%;
+            top: 50%;
+            transform: translate(-50%, -50%);
+            border-radius: 50%;
+            animation: rotate 20s infinite;
+            filter: blur(12vmax);
+            z-index: -2;
+            opacity: 0.6;
+        }
+
+        @keyframes rotate {
+            from { transform: translate(-50%, -50%) rotate(0deg); }
+            to { transform: translate(-50%, -50%) rotate(360deg); }
+        }
+
+        /* --- Glassmorphism Card Style with Animated Border --- */
+        .glass-card {
+            background: rgba(22, 27, 34, 0.6);
+            backdrop-filter: blur(12px);
+            -webkit-backdrop-filter: blur(12px);
+            border: 1px solid var(--border-color);
+            transition: all 0.3s ease;
+            position: relative;
+            overflow: hidden;
+        }
+        
+        .glass-card:not(.non-interactive)::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: conic-gradient(from 0deg, transparent, var(--accent-primary), transparent);
+            opacity: 0;
+            transition: opacity 0.3s ease;
+            animation: spin 3s linear infinite paused;
+            pointer-events: none;
+            z-index: -1;
+        }
+        
+        .glass-card:not(.non-interactive):hover::before {
+            opacity: 0.8;
+            animation-play-state: running;
+        }
+        
+        .glass-card:not(.non-interactive):hover {
+            transform: translateY(-4px);
+            box-shadow: 0 8px 30px rgba(0, 0, 0, 0.2);
+        }
+
+        @keyframes spin {
+            from { transform: rotate(0deg); }
+            to { transform: rotate(360deg); }
+        }
+
+
+        /* --- Tab/Page & Onboarding Step Transitions --- */
+        .tab-content, .onboarding-step { display: none; }
+        .tab-content.active {
+            display: block;
+            animation: fadeIn 0.5s ease-in-out;
+        }
+        .onboarding-step.active {
+            display: block;
+            animation: slideIn 0.5s ease-in-out forwards;
+        }
+         .onboarding-step.exiting {
+            animation: slideOut 0.5s ease-in-out forwards;
+        }
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(15px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+         @keyframes slideIn {
+            from { opacity: 0; transform: translateX(30px); }
+            to { opacity: 1; transform: translateX(0); }
+        }
+        @keyframes slideOut {
+            from { opacity: 1; transform: translateX(0); }
+            to { opacity: 0; transform: translateX(-30px); }
+        }
+
+        /* --- Staggered List Animation --- */
+        .stagger-item {
+            opacity: 0;
+            transform: translateY(20px);
+            animation: fadeIn 0.5s ease-out forwards;
+        }
+        
+        /* --- Custom Scrollbar --- */
+        ::-webkit-scrollbar { width: 8px; }
+        ::-webkit-scrollbar-track { background: var(--dark-bg); }
+        ::-webkit-scrollbar-thumb { background: var(--text-secondary); border-radius: 10px; }
+        ::-webkit-scrollbar-thumb:hover { background: var(--accent-primary); }
+
+        /* --- Custom Toast Notification --- */
+        #toast {
+            position: fixed; bottom: -100px; left: 50%;
+            transform: translateX(-50%); padding: 12px 24px;
+            border-radius: 9999px; font-weight: 500;
+            transition: bottom 0.5s ease-in-out; z-index: 2000; border: 1px solid;
+        }
+        #toast.show { bottom: 30px; }
+        #toast.success { background-color: #166534; color: #D1FAE5; border-color: #15803D; }
+        #toast.error { background-color: #991B1B; color: #FEE2E2; border-color: #B91C1C; }
+
+        /* --- Goal Selector --- */
+        .goal-btn.active {
+            background-color: var(--dark-bg);
+            color: var(--text-primary);
+            box-shadow: 0 0 15px rgba(0, 169, 255, 0.3);
+            border-color: var(--accent-primary);
+        }
+        
+        /* --- Nav Button Hover Animation --- */
+        .nav-btn { transition: transform 0.2s ease, background-color 0.2s ease; }
+        .nav-btn:hover { transform: translateY(-2px); }
+        
+    </style>
+</head>
+<body class="min-h-screen">
+    
+    <div id="blob"></div>
+    
+    <div id="onboarding-flow" class="hidden min-h-screen flex-col lg:flex-row bg-slate-900">
+        <div class="hidden lg:flex flex-1 items-center justify-center p-8 bg-gradient-to-br from-slate-900 to-slate-800 relative overflow-hidden">
+            <div class="z-10 text-center">
+                <svg class="mx-auto w-24 h-24 text-cyan-400 mb-6" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor"><path d="M12.383 3.014a2.25 2.25 0 0 0-3.233 2.76l5.42 6.226-3.41 4.29a2.25 2.25 0 0 0 3.8 2.593l5.373-6.766a4.5 4.5 0 0 0-.42-5.933l-7.53-3.17Z" /><path d="M11.617 19.986a2.25 2.25 0 0 0 3.233-2.76l-5.42-6.226 3.41-4.29a2.25 2.25 0 0 0-3.8-2.593l-5.373 6.766a4.5 4.5 0 0 0 .42 5.933l7.53 3.17Z" /></svg>
+                <h1 class="text-5xl font-bold mb-4 bg-clip-text text-transparent bg-gradient-to-r from-cyan-400 to-purple-400">Your Journey Starts Now</h1>
+                <p class="text-slate-300 max-w-md mx-auto">Personalized tracking to help you achieve your fitness and financial goals.</p>
+            </div>
+            <div class="absolute -bottom-1/3 -right-1/3 w-2/3 h-2/3 bg-gradient-to-tr from-cyan-500/20 to-purple-500/20 rounded-full blur-3xl"></div>
+        </div>
+
+        <div class="w-full lg:w-1/2 xl:w-2/5 flex flex-col justify-center p-6 sm:p-12">
+            <div class="w-full max-w-md mx-auto relative sm:h-[450px]">
+                <div class="mb-8 absolute top-0 left-0 right-0">
+                    <div class="flex justify-between mb-1">
+                        <span class="text-base font-medium text-cyan-400">Setup Progress</span>
+                        <span id="progress-text" class="text-sm font-medium text-cyan-400">Step 1 of 3</span>
+                    </div>
+                    <div class="w-full bg-slate-700 rounded-full h-2.5">
+                        <div id="progress-bar" class="bg-cyan-400 h-2.5 rounded-full transition-all duration-500" style="width: 33%"></div>
+                    </div>
+                </div>
+
+                <form id="onboarding-form" class="absolute top-20 left-0 right-0">
+                    <div id="step-1" class="onboarding-step space-y-4">
+                        <h2 class="text-3xl font-bold mb-2">Tell us about you</h2>
+                        <p class="text-slate-400 pb-4">This helps us create your personalized plan.</p>
+                        <input type="text" id="onboarding-name" placeholder="Your Name" class="w-full bg-slate-800 border border-slate-700 rounded-lg px-4 py-3 focus:ring-2 focus:ring-cyan-500 focus:outline-none transition" required>
+                        <div class="grid grid-cols-2 gap-4">
+                            <input type="number" id="onboarding-age" placeholder="Age" class="w-full bg-slate-800 border border-slate-700 rounded-lg px-4 py-3 focus:ring-2 focus:ring-cyan-500 focus:outline-none transition" required>
+                            <input type="number" id="onboarding-weight" placeholder="Weight (kg)" class="w-full bg-slate-800 border border-slate-700 rounded-lg px-4 py-3 focus:ring-2 focus:ring-cyan-500 focus:outline-none transition" required>
+                        </div>
+                        <input type="number" id="onboarding-height" placeholder="Height (cm)" class="w-full bg-slate-800 border border-slate-700 rounded-lg px-4 py-3 focus:ring-2 focus:ring-cyan-500 focus:outline-none transition" required>
+                        <button type="button" id="next-step-1" class="w-full mt-4 bg-cyan-500 text-slate-900 font-semibold rounded-lg px-4 py-3.5 hover:bg-cyan-400 transition">Next</button>
+                    </div>
+
+                    <div id="step-2" class="onboarding-step space-y-4">
+                        <h2 class="text-3xl font-bold mb-2">What's your goal?</h2>
+                        <p class="text-slate-400 pb-4">Select your primary fitness objective.</p>
+                         <div id="goal-selector" class="grid grid-cols-1 sm:grid-cols-3 gap-3">
+                            <button type="button" data-goal="lose" class="goal-btn py-4 px-2 text-md font-semibold rounded-lg transition border-2 border-slate-700 text-slate-300">Lose Weight</button>
+                            <button type="button" data-goal="maintain" class="goal-btn py-4 px-2 text-md font-semibold rounded-lg transition border-2 border-slate-700 text-slate-300 active">Maintain</button>
+                            <button type="button" data-goal="gain" class="goal-btn py-4 px-2 text-md font-semibold rounded-lg transition border-2 border-slate-700 text-slate-300">Gain Weight</button>
+                        </div>
+                        <input type="number" id="onboarding-target-weight" placeholder="Target Weight (kg)" class="w-full bg-slate-800 border border-slate-700 rounded-lg px-4 py-3 focus:ring-2 focus:ring-cyan-500 focus:outline-none transition" required>
+                        <div class="flex gap-4">
+                            <button type="button" id="prev-step-2" class="w-1/3 mt-4 bg-slate-700 text-white font-semibold rounded-lg px-4 py-3.5 hover:bg-slate-600 transition">Back</button>
+                            <button type="button" id="next-step-2" class="w-2/3 mt-4 bg-cyan-500 text-slate-900 font-semibold rounded-lg px-4 py-3.5 hover:bg-cyan-400 transition">Next</button>
+                        </div>
+                    </div>
+
+                    <div id="step-3" class="onboarding-step space-y-4">
+                        <h2 class="text-3xl font-bold mb-2">Financial Goal</h2>
+                        <p class="text-slate-400 pb-4">Set a monthly budget to track your spending.</p>
+                        <input type="number" id="onboarding-budget" placeholder="Monthly Budget (₹)" class="w-full bg-slate-800 border border-slate-700 rounded-lg px-4 py-3 focus:ring-2 focus:ring-cyan-500 focus:outline-none transition" required>
+                        <div class="flex gap-4">
+                            <button type="button" id="prev-step-3" class="w-1/3 mt-4 bg-slate-700 text-white font-semibold rounded-lg px-4 py-3.5 hover:bg-slate-600 transition">Back</button>
+                            <button type="submit" class="w-2/3 mt-4 bg-cyan-500 text-slate-900 font-semibold rounded-lg px-4 py-3.5 hover:bg-cyan-400 transition">Get Started</button>
+                        </div>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+
+    <div id="app-wrapper" class="hidden flex flex-col md:flex-row min-h-screen">
+        
+        <nav class="hidden md:flex flex-col w-64 p-4 border-r border-slate-800 bg-slate-900/30">
+            <div class="flex items-center gap-3 mb-8">
+                <svg class="w-8 h-8 text-cyan-400" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor"><path d="M12.383 3.014a2.25 2.25 0 0 0-3.233 2.76l5.42 6.226-3.41 4.29a2.25 2.25 0 0 0 3.8 2.593l5.373-6.766a4.5 4.5 0 0 0-.42-5.933l-7.53-3.17Z" /><path d="M11.617 19.986a2.25 2.25 0 0 0 3.233-2.76l-5.42-6.226 3.41-4.29a2.25 2.25 0 0 0-3.8-2.593l-5.373 6.766a4.5 4.5 0 0 0 .42 5.933l7.53 3.17Z" /></svg>
+                <h1 class="text-xl font-bold text-white">FitTrack AI</h1>
+            </div>
+            <div class="flex flex-col space-y-2">
+                <button class="nav-btn group flex items-center gap-3 px-3 py-2.5 rounded-lg text-left" data-tab="dashboard"><svg class="w-5 h-5" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="m3 9 9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/><polyline points="9 22 9 12 15 12 15 22"/></svg><span>Dashboard</span></button>
+                <button class="nav-btn group flex items-center gap-3 px-3 py-2.5 rounded-lg text-left" data-tab="food"><svg class="w-5 h-5" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 2v7c0 1.1.9 2 2 2h4a2 2 0 0 0 2-2V2"/><path d="M17 2v7c0 1.1.9 2 2 2h4a2 2 0 0 0 2-2V2"/><path d="M7 11v11"/><path d="M17 11v11"/></svg><span>Food</span></button>
+                <button class="nav-btn group flex items-center gap-3 px-3 py-2.5 rounded-lg text-left" data-tab="workout"><svg class="w-5 h-5" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M18 8L22 12L18 16"/><path d="M6 8L2 12L6 16"/><path d="M12.5 4L11.5 20"/></svg><span>Workout</span></button>
+                <button class="nav-btn group flex items-center gap-3 px-3 py-2.5 rounded-lg text-left" data-tab="activity"><svg class="w-5 h-5" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12h14"/><path d="m12 5 7 7-7 7"/></svg><span>Activity</span></button>
+                <button class="nav-btn group flex items-center gap-3 px-3 py-2.5 rounded-lg text-left" data-tab="money"><svg class="w-5 h-5" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect width="20" height="12" x="2" y="6" rx="2"/><circle cx="12" cy="12" r="2"/></svg><span>Money</span></button>
+                <button class="nav-btn group flex items-center gap-3 px-3 py-2.5 rounded-lg text-left" data-tab="analytics"><svg class="w-5 h-5" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 3v18h18"/><path d="m19 9-5 5-4-4-3 3"/></svg><span>Analytics</span></button>
+                <button class="nav-btn group flex items-center gap-3 px-3 py-2.5 rounded-lg text-left" data-tab="profile"><svg class="w-5 h-5" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M19 21v-2a4 4 0 0 0-4-4H9a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg><span>Profile</span></button>
+            </div>
+            <button id="end-day-btn-desktop" class="mt-auto glass-card flex items-center justify-center gap-3 px-3 py-3 rounded-lg text-amber-300 hover:text-white hover:bg-amber-500/20">
+                <svg class="w-5 h-5" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 3v1"/><path d="M21 12h-1"/><path d="M3 12H2"/><path d="m18.364 5.636-.707.707"/><path d="m6.343 17.657-.707.707"/><path d="M12 21v-1"/><path d="m5.636 5.636.707.707"/><path d="m17.657 17.657.707.707"/><circle cx="12" cy="12" r="4"/></svg>
+                <span>End Day</span>
+            </button>
+        </nav>
+
+        <main class="flex-1 p-4 md:p-8 overflow-y-auto pb-24 md:pb-8">
+            <div class="max-w-7xl mx-auto">
+                <header class="md:hidden flex justify-between items-center mb-6">
+                    <div class="flex items-center gap-3">
+                        <svg class="w-8 h-8 text-cyan-400" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor"><path d="M12.383 3.014a2.25 2.25 0 0 0-3.233 2.76l5.42 6.226-3.41 4.29a2.25 2.25 0 0 0 3.8 2.593l5.373-6.766a4.5 4.5 0 0 0-.42-5.933l-7.53-3.17Z" /><path d="M11.617 19.986a2.25 2.25 0 0 0 3.233-2.76l-5.42-6.226 3.41-4.29a2.25 2.25 0 0 0-3.8-2.593l-5.373 6.766a4.5 4.5 0 0 0 .42 5.933l7.53 3.17Z" /></svg>
+                        <h1 class="text-xl font-bold text-white">FitTrack AI</h1>
+                    </div>
+                    <div id="user-initial-mobile" class="w-10 h-10 rounded-full bg-gradient-to-br from-cyan-400 to-purple-500 flex items-center justify-center font-bold"></div>
+                </header>
+                
+                <section id="dashboard" class="tab-content"></section>
+                <section id="food" class="tab-content"></section>
+                <section id="workout" class="tab-content"></section>
+                <section id="activity" class="tab-content"></section>
+                <section id="money" class="tab-content"></section>
+                <section id="analytics" class="tab-content"></section>
+                <section id="profile" class="tab-content"></section>
+            </div>
+        </main>
+        
+        <nav class="md:hidden fixed bottom-0 left-0 right-0 bg-slate-900/50 backdrop-blur-lg border-t border-slate-800 flex justify-around p-2 z-50">
+            <button class="nav-btn flex-1 flex flex-col items-center justify-center p-2 rounded-lg" data-tab="dashboard"><svg class="w-6 h-6 mb-1" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="m3 9 9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/><polyline points="9 22 9 12 15 12 15 22"/></svg><span class="text-xs">Dash</span></button>
+            <button class="nav-btn flex-1 flex flex-col items-center justify-center p-2 rounded-lg" data-tab="food"><svg class="w-6 h-6 mb-1" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 2v7c0 1.1.9 2 2 2h4a2 2 0 0 0 2-2V2"/><path d="M17 2v7c0 1.1.9 2 2 2h4a2 2 0 0 0 2-2V2"/><path d="M7 11v11"/><path d="M17 11v11"/></svg><span class="text-xs">Food</span></button>
+            <button class="nav-btn flex-1 flex flex-col items-center justify-center p-2 rounded-lg" data-tab="workout"><svg class="w-6 h-6 mb-1" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M18 8L22 12L18 16"/><path d="M6 8L2 12L6 16"/><path d="M12.5 4L11.5 20"/></svg><span class="text-xs">Workout</span></button>
+            <button class="nav-btn flex-1 flex flex-col items-center justify-center p-2 rounded-lg" data-tab="money"><svg class="w-6 h-6 mb-1" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect width="20" height="12" x="2" y="6" rx="2"/><circle cx="12" cy="12" r="2"/></svg><span class="text-xs">Money</span></button>
+            <button id="end-day-btn-mobile" class="flex-1 flex flex-col items-center justify-center p-2 rounded-lg text-amber-300"><svg class="w-6 h-6 mb-1" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 3v1"/><path d="M21 12h-1"/><path d="M3 12H2"/><path d="m18.364 5.636-.707.707"/><path d="m6.343 17.657-.707.707"/><path d="M12 21v-1"/><path d="m5.636 5.636.707.707"/><path d="m17.657 17.657.707.707"/><circle cx="12" cy="12" r="4"/></svg><span class="text-xs">End Day</span></button>
+        </nav>
+    </div>
+
+    <div id="end-day-modal" class="hidden fixed inset-0 bg-black/70 backdrop-blur-md z-50 flex items-center justify-center p-4">
+        <div class="glass-card rounded-2xl w-full max-w-2xl">
+            <div class="flex justify-between items-center p-6 border-b border-slate-800">
+                <h2 class="text-xl font-bold">End of Day Summary</h2>
+                <button class="close-modal text-slate-400 hover:text-white text-3xl">&times;</button>
+            </div>
+            <div id="end-day-summary" class="p-6 space-y-4"></div>
+            <div class="flex justify-end gap-4 p-6 border-t border-slate-800">
+                <button id="cancel-end-day-btn" class="px-6 py-2.5 rounded-lg bg-slate-700 hover:bg-slate-600 transition font-semibold">Cancel</button>
+                <button id="confirm-end-day-btn" class="px-6 py-2.5 rounded-lg bg-cyan-600 hover:bg-cyan-500 transition font-semibold">Confirm & Archive</button>
+            </div>
+        </div>
+    </div>
+    
+    <div id="toast"></div>
+
+    <script>
+        // --- DOM Elements ---
+        const onboardingFlow = document.getElementById('onboarding-flow');
+        const appWrapper = document.getElementById('app-wrapper');
+        const onboardingForm = document.getElementById('onboarding-form');
+        const navButtons = document.querySelectorAll('.nav-btn');
+        const endDayBtnDesktop = document.getElementById('end-day-btn-desktop');
+        const endDayBtnMobile = document.getElementById('end-day-btn-mobile');
+        const endDayModal = document.getElementById('end-day-modal');
+        const closeModalBtn = endDayModal.querySelector('.close-modal');
+        const cancelEndDayBtn = document.getElementById('cancel-end-day-btn');
+        const confirmEndDayBtn = document.getElementById('confirm-end-day-btn');
+
+        // --- State Variables ---
+        let userData = {};
+        let dailyLog = [];
+        let historicalLog = []; // <-- NEW: For long-term storage
+        let selectedGoal = 'maintain'; // Default for onboarding
+        let DAILY_CALORIE_GOAL = 2000;
+        let MONTHLY_BUDGET = 50000;
+
+        // --- Chart Instances ---
+        let caloriesChart, expensesChart, caloriesTrendChart, expensesTrendChart, expenseCategoriesChart, calorieSourcesChart;
+
+        // --- DATA CATALOGS (Sample Data) ---
+        const foodCatalog = [
+            { name: 'Apple', calories: 95, icon: '🍎', protein: 0.5, carbs: 25, fat: 0.3 },
+            { name: 'Chicken Breast (100g)', calories: 165, icon: '🍗', protein: 31, carbs: 0, fat: 3.6 },
+            { name: 'Brown Rice (1 cup)', calories: 215, icon: '🍚', protein: 5, carbs: 45, fat: 1.8 },
+            { name: 'Broccoli (1 cup)', calories: 55, icon: '🥦', protein: 3.7, carbs: 11, fat: 0.6 },
+            { name: 'Egg', calories: 78, icon: '🥚', protein: 6, carbs: 0.6, fat: 5 },
+            { name: 'Salmon (100g)', calories: 208, icon: '🐟', protein: 20, carbs: 0, fat: 13 },
+            { name: 'Roti / Chapati', calories: 120, icon: '🍞', protein: 4, carbs: 20, fat: 3},
+            { name: 'Paneer (100g)', calories: 265, icon: '🧀', protein: 18, carbs: 1.2, fat: 20 },
+            { name: 'Dal (1 cup)', calories: 230, icon: '🥣', protein: 18, carbs: 41, fat: 1.5 }
+        ];
+
+        const workoutCatalog = {
+            monday: {
+                chest: [ { name: 'Bench Press', calories: 100, icon: '🏋️' }, { name: 'Push-ups', calories: 80, icon: '💪' } ],
+                triceps: [ { name: 'Tricep Dips', calories: 70, icon: '🤸' } ]
+            },
+            tuesday: {
+                back: [ { name: 'Pull-ups', calories: 120, icon: '🧗' }, { name: 'Deadlift', calories: 150, icon: '🏋️' } ],
+                biceps: [ { name: 'Bicep Curls', calories: 60, icon: '💪' } ]
+            },
+            full: [ // Default for other days
+                { name: 'Full Body HIIT', calories: 300, icon: '💥' }, { name: 'Yoga', calories: 150, icon: '🧘' }
+            ]
+        };
+
+        const activityCatalog = [
+            { name: 'Walking (30 min)', calories: 150, icon: '🚶' },
+            { name: 'Running (30 min)', calories: 300, icon: '🏃' },
+            { name: 'Cycling (30 min)', calories: 250, icon: '🚴' },
+            { name: 'Swimming (30 min)', calories: 280, icon: '🏊' },
+            { name: 'Cleaning', calories: 120, icon: '🧹' }
+        ];
+        
+        // --- Core Rendering Functions ---
+        function renderDashboard() {
+            const dashboardEl = document.getElementById('dashboard');
+            const logSummary = renderDailyLog();
+            
+            dashboardEl.innerHTML = `
+                <h1 class="text-3xl font-bold mb-2">Welcome back, ${userData.name.split(' ')[0]}!</h1>
+                <p class="text-slate-400 mb-8">Here's your summary for today.</p>
+                
+                <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4 md:gap-6 mb-8">
+                    <div class="glass-card non-interactive p-5 rounded-2xl">
+                        <h3 class="font-semibold text-slate-300 mb-2">Calorie Balance</h3>
+                        <p class="text-4xl font-bold bg-clip-text text-transparent bg-gradient-to-r from-cyan-400 to-purple-400 counter" data-target="${logSummary.balance}">0</p>
+                        <p class="text-sm text-slate-400">Goal: ${DAILY_CALORIE_GOAL}</p>
+                    </div>
+                    <div class="glass-card non-interactive p-5 rounded-2xl">
+                        <h3 class="font-semibold text-slate-300 mb-2">Money Spent Today</h3>
+                        <p class="text-4xl font-bold text-amber-300 counter" data-prefix="₹" data-target="${logSummary.moneySpent}">0</p>
+                         <p class="text-sm text-slate-400">Daily Budget: ₹${(MONTHLY_BUDGET/30).toFixed(0)}</p>
+                    </div>
+                    <div class="glass-card non-interactive p-5 rounded-2xl">
+                        <h3 class="font-semibold text-slate-300 mb-2">Consumed</h3>
+                        <p class="text-4xl font-bold text-green-400 counter" data-target="${logSummary.consumed}">0</p>
+                        <p class="text-sm text-slate-400">kcal</p>
+                    </div>
+                    <div class="glass-card non-interactive p-5 rounded-2xl">
+                        <h3 class="font-semibold text-slate-300 mb-2">Burned</h3>
+                        <p class="text-4xl font-bold text-red-400 counter" data-target="${logSummary.burned}">0</p>
+                        <p class="text-sm text-slate-400">kcal</p>
+                    </div>
+                </div>
+
+                <div class="grid grid-cols-1 lg:grid-cols-2 gap-4 md:gap-6">
+                    <div class="glass-card non-interactive p-5 rounded-2xl">
+                         <h3 class="font-semibold text-slate-300 mb-4">Weekly Calories</h3>
+                        <div class="h-64"><canvas id="calories-chart"></canvas></div>
+                    </div>
+                    <div class="glass-card non-interactive p-5 rounded-2xl">
+                        <h3 class="font-semibold text-slate-300 mb-4">Weekly Expenses</h3>
+                        <div class="h-64"><canvas id="expenses-chart"></canvas></div>
+                    </div>
+                </div>
+            `;
+        }
+        function renderFood() {
+            const foodEl = document.getElementById('food');
+            foodEl.innerHTML = `
+                <h1 class="text-3xl font-bold mb-6">Log Food</h1>
+                <div class="grid grid-cols-1 lg:grid-cols-2 gap-8">
+                    <div>
+                        <h2 class="text-xl font-semibold mb-4">Quick Add</h2>
+                        <div id="food-catalog" class="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-4"></div>
+                    </div>
+                    <div class="glass-card non-interactive p-6 rounded-2xl">
+                        <h2 class="text-xl font-semibold mb-4">Add Custom Food</h2>
+                        <div class="space-y-4">
+                            <input type="text" id="custom-food-name" placeholder="Food Name" class="w-full bg-slate-800 border border-slate-700 rounded-lg px-4 py-3 focus:ring-2 focus:ring-cyan-500 focus:outline-none transition">
+                            <input type="number" id="custom-food-calories" placeholder="Calories" class="w-full bg-slate-800 border border-slate-700 rounded-lg px-4 py-3 focus:ring-2 focus:ring-cyan-500 focus:outline-none transition">
+                            <div class="grid grid-cols-3 gap-3">
+                                <input type="number" id="custom-food-protein" placeholder="Protein (g)" class="w-full bg-slate-800 border border-slate-700 rounded-lg px-4 py-3 focus:ring-2 focus:ring-cyan-500 focus:outline-none transition">
+                                <input type="number" id="custom-food-carbs" placeholder="Carbs (g)" class="w-full bg-slate-800 border border-slate-700 rounded-lg px-4 py-3 focus:ring-2 focus:ring-cyan-500 focus:outline-none transition">
+                                <input type="number" id="custom-food-fat" placeholder="Fat (g)" class="w-full bg-slate-800 border border-slate-700 rounded-lg px-4 py-3 focus:ring-2 focus:ring-cyan-500 focus:outline-none transition">
+                            </div>
+                            <button id="add-custom-food-btn" class="w-full mt-2 bg-cyan-500 text-slate-900 font-semibold rounded-lg px-4 py-3.5 hover:bg-cyan-400 transition">Add Food</button>
+                        </div>
+                    </div>
+                </div>
+            `;
+            const foodCatalogEl = document.getElementById('food-catalog');
+            foodCatalog.forEach(food => {
+                const foodItem = document.createElement('div');
+                foodItem.className = 'glass-card rounded-2xl text-center p-4 cursor-pointer';
+                foodItem.innerHTML = `<div class="text-4xl mb-2">${food.icon}</div><h3 class="font-semibold text-sm">${food.name}</h3><p class="text-xs text-slate-400">${food.calories} kcal</p>`;
+                foodItem.addEventListener('click', () => { addItemToLog('food', food); showToast(`${food.name} added!`, 'success'); });
+                foodCatalogEl.appendChild(foodItem);
+            });
+            document.getElementById('add-custom-food-btn').addEventListener('click', addCustomFoodHandler);
+        }
+        function renderWorkout() {
+             const workoutEl = document.getElementById('workout');
+            workoutEl.innerHTML = `
+                <h1 class="text-3xl font-bold mb-6">Log Workout</h1>
+                <div class="glass-card non-interactive p-4 rounded-xl mb-6 flex flex-col sm:flex-row gap-4">
+                    <div class="flex-1">
+                        <label for="workout-day" class="block text-sm font-medium text-slate-400 mb-1">Day</label>
+                        <select id="workout-day" class="w-full bg-slate-800 border border-slate-700 rounded-lg px-3 py-2 focus:ring-2 focus:ring-cyan-500 focus:outline-none transition">
+                            <option value="monday">Monday</option>
+                            <option value="tuesday">Tuesday</option>
+                            <option value="wednesday">Wednesday</option>
+                            <option value="thursday">Thursday</option>
+                            <option value="friday">Friday</option>
+                            <option value="saturday">Saturday</option>
+                            <option value="sunday">Sunday</option>
+                        </select>
+                    </div>
+                    <div class="flex-1">
+                        <label for="body-part" class="block text-sm font-medium text-slate-400 mb-1">Body Part</label>
+                        <select id="body-part" class="w-full bg-slate-800 border border-slate-700 rounded-lg px-3 py-2 focus:ring-2 focus:ring-cyan-500 focus:outline-none transition">
+                            <option value="chest">Chest</option>
+                            <option value="back">Back</option>
+                            <option value="biceps">Biceps</option>
+                            <option value="triceps">Triceps</option>
+                            <option value="legs">Legs</option>
+                            <option value="full">Full Body</option>
+                        </select>
+                    </div>
+                </div>
+                <div id="workout-catalog" class="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 gap-4"></div>
+            `;
+            document.getElementById('workout-day').addEventListener('change', renderWorkoutCatalogItems);
+            document.getElementById('body-part').addEventListener('change', renderWorkoutCatalogItems);
+            renderWorkoutCatalogItems(); // Initial render
+        }
+        function renderActivity() {
+            const activityEl = document.getElementById('activity');
+            activityEl.innerHTML = `<h1 class="text-3xl font-bold mb-6">Log Activity</h1><div id="activity-catalog" class="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-4"></div>`;
+            const activityCatalogEl = document.getElementById('activity-catalog');
+            activityCatalog.forEach(activity => {
+                const activityItem = document.createElement('div');
+                activityItem.className = 'glass-card rounded-2xl text-center p-4 cursor-pointer';
+                activityItem.innerHTML = `<div class="text-4xl mb-2">${activity.icon}</div><h3 class="font-semibold text-sm">${activity.name}</h3><p class="text-xs text-slate-400">${activity.calories} kcal</p>`;
+                activityItem.addEventListener('click', () => { addItemToLog('activity', activity); showToast(`${activity.name} logged!`, 'success'); });
+                activityCatalogEl.appendChild(activityItem);
+            });
+        }
+        function renderMoney() {
+            const moneyEl = document.getElementById('money');
+            moneyEl.innerHTML = `
+                <h1 class="text-3xl font-bold mb-6">Track Money</h1>
+                <div class="grid grid-cols-1 lg:grid-cols-5 gap-8">
+                    <div class="lg:col-span-2">
+                        <div class="glass-card non-interactive p-6 rounded-2xl">
+                            <h2 class="text-xl font-semibold mb-4">Add Expense</h2>
+                            <div class="space-y-4">
+                                <input type="text" id="expense-name" placeholder="Expense Name" class="w-full bg-slate-800 border border-slate-700 rounded-lg px-4 py-3 focus:ring-2 focus:ring-cyan-500 focus:outline-none transition">
+                                <input type="number" id="expense-amount" placeholder="Amount (₹)" class="w-full bg-slate-800 border border-slate-700 rounded-lg px-4 py-3 focus:ring-2 focus:ring-cyan-500 focus:outline-none transition">
+                                <select id="expense-category" class="w-full bg-slate-800 border border-slate-700 rounded-lg px-3 py-3 focus:ring-2 focus:ring-cyan-500 focus:outline-none transition">
+                                    <option>Food</option><option>Transport</option><option>Entertainment</option><option>Shopping</option><option>Utilities</option><option>Other</option>
+                                </select>
+                                <button id="add-expense-btn" class="w-full mt-2 bg-cyan-500 text-slate-900 font-semibold rounded-lg px-4 py-3.5 hover:bg-cyan-400 transition">Add Expense</button>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="lg:col-span-3">
+                         <h2 class="text-xl font-semibold mb-4">Today's Expenses</h2>
+                         <div id="expense-list-items" class="space-y-2"></div>
+                    </div>
+                </div>
+            `;
+            document.getElementById('add-expense-btn').addEventListener('click', addExpenseHandler);
+            renderExpenseList();
+        }
+        function renderAnalytics() { 
+            const analyticsEl = document.getElementById('analytics');
+            analyticsEl.innerHTML = `
+                <h1 class="text-3xl font-bold mb-6">Analytics & Reports</h1>
+                <div class="grid grid-cols-1 xl:grid-cols-2 gap-6 mb-6">
+                    <div class="glass-card non-interactive p-5 rounded-2xl">
+                        <h3 class="font-semibold text-slate-300 mb-4">30-Day Net Calorie Trend</h3>
+                        <div class="h-64"><canvas id="calories-trend-chart"></canvas></div>
+                    </div>
+                    <div class="glass-card non-interactive p-5 rounded-2xl">
+                        <h3 class="font-semibold text-slate-300 mb-4">30-Day Expense Trend</h3>
+                        <div class="h-64"><canvas id="expenses-trend-chart"></canvas></div>
+                    </div>
+                </div>
+                
+                <div class="glass-card non-interactive p-6 rounded-2xl mt-6">
+                     <h2 class="text-xl font-semibold mb-4">Generate Reports</h2>
+                     <p class="text-slate-400 mb-4">Export a summary of your activity. The data is saved to a .txt file in your downloads folder.</p>
+                     <div class="flex flex-col sm:flex-row gap-4">
+                        <button id="generate-weekly-report" class="flex-1 bg-cyan-600 hover:bg-cyan-500 text-white font-semibold rounded-lg px-4 py-3 transition">Export Weekly Report</button>
+                        <button id="generate-monthly-report" class="flex-1 bg-purple-600 hover:bg-purple-500 text-white font-semibold rounded-lg px-4 py-3 transition">Export Monthly Report</button>
+                     </div>
+                     <div id="clear-data-wrapper" class="mt-4 hidden">
+                        <button id="clear-historical-data" class="w-full bg-red-800/80 hover:bg-red-700/80 text-white font-semibold rounded-lg px-4 py-3 transition">Clear All Archived Data</button>
+                     </div>
+                </div>
+            `;
+            document.getElementById('generate-weekly-report').addEventListener('click', () => generateReport(7));
+            document.getElementById('generate-monthly-report').addEventListener('click', () => generateReport(30));
+            document.getElementById('clear-historical-data').addEventListener('click', () => {
+                if (confirm('Are you sure you want to delete all your archived data? This cannot be undone.')) {
+                    historicalLog = [];
+                    localStorage.setItem('historicalLog', '[]');
+                    showToast('All historical data cleared!', 'success');
+                    document.getElementById('clear-data-wrapper').classList.add('hidden');
+                }
+            });
+        }
+        function renderProfile() { 
+            const profileEl = document.getElementById('profile');
+            profileEl.innerHTML = `
+                <div class="flex flex-col sm:flex-row items-center gap-6 mb-8">
+                    <div class="w-24 h-24 rounded-full bg-gradient-to-br from-cyan-400 to-purple-500 flex items-center justify-center font-bold text-4xl text-slate-900">${userData.name.charAt(0).toUpperCase()}</div>
+                    <div>
+                        <h1 class="text-4xl font-bold">${userData.name}</h1>
+                        <p class="text-slate-400">Age: ${userData.age}</p>
+                    </div>
+                </div>
+
+                <div class="glass-card non-interactive p-6 rounded-2xl mb-6">
+                    <div class="flex justify-between items-center mb-4">
+                        <h2 class="text-xl font-semibold">Your Stats & Goals</h2>
+                        <div>
+                             <button id="edit-profile-btn" class="px-4 py-2 text-sm rounded-lg bg-slate-700 hover:bg-slate-600 transition font-semibold">Edit</button>
+                             <button id="save-profile-btn" class="hidden px-4 py-2 text-sm rounded-lg bg-cyan-600 hover:bg-cyan-500 transition font-semibold">Save</button>
+                        </div>
+                    </div>
+                    
+                    <div id="profile-stats-display" class="grid grid-cols-2 md:grid-cols-4 gap-4">
+                        <div><p class="text-slate-400">Weight</p><p class="font-bold text-lg">${userData.weight} kg</p></div>
+                        <div><p class="text-slate-400">Target</p><p class="font-bold text-lg">${userData.targetWeight} kg</p></div>
+                        <div><p class="text-slate-400">Calorie Goal</p><p class="font-bold text-lg">${userData.calorieGoal} kcal</p></div>
+                        <div><p class="text-slate-400">Monthly Budget</p><p class="font-bold text-lg">₹${userData.budget.toLocaleString()}</p></div>
+                    </div>
+                    
+                    <div id="profile-stats-edit" class="hidden space-y-4">
+                         <div class="grid grid-cols-1 sm:grid-cols-3 gap-4">
+                            <div><label class="block text-sm text-slate-400">Weight (kg)</label><input id="edit-weight" type="number" value="${userData.weight}" class="w-full bg-slate-800 border border-slate-700 rounded-lg p-2"></div>
+                            <div><label class="block text-sm text-slate-400">Target (kg)</label><input id="edit-target-weight" type="number" value="${userData.targetWeight}" class="w-full bg-slate-800 border border-slate-700 rounded-lg p-2"></div>
+                            <div><label class="block text-sm text-slate-400">Budget (₹)</label><input id="edit-budget" type="number" value="${userData.budget}" class="w-full bg-slate-800 border border-slate-700 rounded-lg p-2"></div>
+                        </div>
+                         <div>
+                            <label class="block text-sm text-slate-400 mb-2">Primary Goal</label>
+                            <div id="edit-goal-selector" class="grid grid-cols-3 gap-3">
+                                <button type="button" data-goal="lose" class="goal-btn py-3 px-2 text-sm font-semibold rounded-lg transition border-2 border-slate-700 text-slate-300">Lose Weight</button>
+                                <button type="button" data-goal="maintain" class="goal-btn py-3 px-2 text-sm font-semibold rounded-lg transition border-2 border-slate-700 text-slate-300">Maintain</button>
+                                <button type="button" data-goal="gain" class="goal-btn py-3 px-2 text-sm font-semibold rounded-lg transition border-2 border-slate-700 text-slate-300">Gain Weight</button>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+                    <div class="glass-card non-interactive p-6 rounded-2xl">
+                         <h2 class="text-xl font-semibold mb-4">Calorie Calculator</h2>
+                         <form id="calorie-calculator" class="space-y-3">
+                             <div class="grid grid-cols-2 gap-3"><input id="calc-age" type="number" placeholder="Age" class="w-full bg-slate-800 border border-slate-700 rounded-lg p-2"><input id="calc-weight" type="number" placeholder="Weight (kg)" class="w-full bg-slate-800 border border-slate-700 rounded-lg p-2"></div>
+                             <input id="calc-height" type="number" placeholder="Height (cm)" class="w-full bg-slate-800 border border-slate-700 rounded-lg p-2">
+                            <select id="calc-activity" class="w-full bg-slate-800 border border-slate-700 rounded-lg p-2"><option value="1.2">Sedentary</option><option value="1.375">Lightly Active</option><option value="1.55">Moderately Active</option><option value="1.725">Very Active</option></select>
+                             <button type="submit" class="w-full mt-2 bg-cyan-500/80 text-white font-semibold rounded-lg px-4 py-2.5 hover:bg-cyan-500 transition">Calculate</button>
+                         </form>
+                         <div id="calculator-results" class="mt-4 hidden space-y-1"></div>
+                    </div>
+                    <div class="glass-card non-interactive p-6 rounded-2xl flex flex-col">
+                        <h2 class="text-xl font-semibold mb-4">Account</h2>
+                        <div class="space-y-3 mt-auto">
+                            <button class="w-full bg-slate-700 hover:bg-slate-600 rounded-lg py-3 font-semibold transition">Settings</button>
+                            <button id="logout-btn" class="w-full bg-red-800/80 hover:bg-red-700/80 rounded-lg py-3 font-semibold transition">Log Out</button>
+                        </div>
+                    </div>
+                </div>
+            `;
+            document.getElementById('edit-profile-btn').addEventListener('click', toggleProfileEdit);
+            document.getElementById('save-profile-btn').addEventListener('click', handleProfileSave);
+            document.getElementById('calorie-calculator').addEventListener('submit', handleCalculatorSubmit);
+            document.getElementById('logout-btn').addEventListener('click', handleLogout);
+        }
+        
+        // --- Event Handlers & Logic Helpers ---
+        function addCustomFoodHandler() {
+            const name = document.getElementById('custom-food-name').value.trim();
+            const calories = parseInt(document.getElementById('custom-food-calories').value);
+            if (name && !isNaN(calories) && calories > 0) {
+                const customFood = {
+                    name, calories, icon: "🍎",
+                    protein: parseInt(document.getElementById('custom-food-protein').value) || 0,
+                    carbs: parseInt(document.getElementById('custom-food-carbs').value) || 0,
+                    fat: parseInt(document.getElementById('custom-food-fat').value) || 0
+                };
+                addItemToLog('food', customFood);
+                showToast('Custom food added!', 'success');
+                document.getElementById('custom-food-name').value = '';
+                document.getElementById('custom-food-calories').value = '';
+                document.getElementById('custom-food-protein').value = '';
+                document.getElementById('custom-food-carbs').value = '';
+                document.getElementById('custom-food-fat').value = '';
+            } else {
+                showToast('Please enter a valid food name and calories.', 'error');
+            }
+        }
+        function addExpenseHandler() {
+            const name = document.getElementById('expense-name').value.trim();
+            const amount = parseFloat(document.getElementById('expense-amount').value);
+            if (name && !isNaN(amount) && amount > 0) {
+                const expense = {
+                    name, amount,
+                    category: document.getElementById('expense-category').value
+                };
+                addItemToLog('expense', expense);
+                 showToast('Expense added!', 'success');
+                document.getElementById('expense-name').value = '';
+                document.getElementById('expense-amount').value = '';
+            } else {
+                showToast('Please enter a valid expense name and amount.', 'error');
+            }
+        }
+        function renderWorkoutCatalogItems() {
+          const day = document.getElementById('workout-day').value;
+          const bodyPart = document.getElementById('body-part').value;
+          const workoutCatalogEl = document.getElementById('workout-catalog');
+          workoutCatalogEl.innerHTML = '';
+          
+          const exercises = workoutCatalog[day]?.[bodyPart] || workoutCatalog.full || [];
+          
+          if (exercises.length === 0) {
+              workoutCatalogEl.innerHTML = `<p class="text-slate-400 col-span-full text-center">No exercises found for this combination.</p>`;
+              return;
+          }
+
+          exercises.forEach(exercise => {
+            const workoutItem = document.createElement('div');
+            workoutItem.className = 'glass-card rounded-2xl text-center p-4 cursor-pointer';
+            workoutItem.innerHTML = `
+              <div class="text-4xl sm:text-5xl mb-3">${exercise.icon}</div>
+              <h3 class="font-semibold text-sm sm:text-base">${exercise.name}</h3>
+              <div class="text-xs text-slate-400">${exercise.calories} kcal burned</div>
+            `;
+            workoutItem.addEventListener('click', () => { addItemToLog('workout', exercise); showToast(`${exercise.name} logged!`, 'success'); });
+            workoutCatalogEl.appendChild(workoutItem);
+          });
+        }
+        function renderExpenseList() {
+            const expenseListEl = document.getElementById('expense-list-items');
+            const expenses = dailyLog.filter(item => item.type === 'expense');
+            expenseListEl.innerHTML = '';
+            if (expenses.length === 0) {
+                expenseListEl.innerHTML = `<div class="text-center py-8 text-slate-500"><svg class="mx-auto h-12 w-12" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="1" d="M3 10h18M7 15h1m4 0h1m-7 4h12a3 3 0 003-3V8a3 3 0 00-3-3H6a3 3 0 00-3 3v8a3 3 0 003 3z" /></svg><p class="mt-2 text-sm">No expenses logged yet.</p></div>`;
+                return;
+            }
+            [...expenses].sort((a, b) => new Date(b.timestamp) - new Date(a.timestamp)).forEach((expense, index) => {
+                const expenseItem = document.createElement('div');
+                expenseItem.className = 'stagger-item flex items-center justify-between p-3 rounded-lg bg-slate-800/50 hover:bg-slate-700/50 transition';
+                expenseItem.style.animationDelay = `${index * 50}ms`;
+                expenseItem.innerHTML = `
+                    <div>
+                        <p class="font-semibold">${expense.name}</p>
+                        <p class="text-xs text-slate-400">₹${expense.amount} | ${expense.category}</p>
+                    </div>
+                    <button class="delete-btn text-slate-500 hover:text-red-400 w-8 h-8 flex items-center justify-center rounded-full" data-log-id="${expense.logId}">
+                        <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"></path></svg>
+                    </button>`;
+                expenseItem.querySelector('.delete-btn').addEventListener('click', (e) => deleteItem(parseInt(e.currentTarget.dataset.logId)));
+                expenseListEl.appendChild(expenseItem);
+            });
+        }
+        function addItemToLog(type, itemData) { 
+            dailyLog.push({ ...itemData, type: type, logId: Date.now(), timestamp: new Date().toISOString() }); 
+            updateAll();
+        }
+        function deleteItem(logId) {
+            const item = dailyLog.find(i => i.logId === logId);
+            dailyLog = dailyLog.filter(i => i.logId !== logId);
+            showToast(`${item.name} removed.`, 'success');
+            updateAll();
+        }
+        function renderDailyLog() {
+            const consumed = dailyLog.filter(i => i.type === 'food').reduce((s, i) => s + i.calories, 0);
+            const burned = dailyLog.filter(i => ['workout', 'activity'].includes(i.type)).reduce((s, i) => s + i.calories, 0);
+            const moneySpent = dailyLog.filter(i => i.type === 'expense').reduce((s, i) => s + i.amount, 0);
+            const dailyBudget = MONTHLY_BUDGET / 30;
+            return { consumed, burned, balance: DAILY_CALORIE_GOAL - consumed + burned, moneySpent, budgetRemaining: Math.max(0, dailyBudget - moneySpent) };
+        }
+        function updateAll() { 
+            localStorage.setItem('dailyLog', JSON.stringify(dailyLog)); 
+            const currentTab = document.querySelector('.tab-content.active')?.id || 'dashboard';
+            renderTabContent(currentTab);
+            if (currentTab === 'dashboard') {
+                animateCounters();
+            }
+        }
+        function showToast(message, type = 'success') {
+            const toast = document.getElementById('toast');
+            toast.textContent = message;
+            toast.className = ''; // Reset classes
+            toast.classList.add('show', type);
+            setTimeout(() => {
+                toast.classList.remove('show');
+            }, 3000);
+        }
+        function renderTabContent(tabId) {
+            switch (tabId) {
+                case 'dashboard': renderDashboard(); initCharts(); break;
+                case 'food': renderFood(); break;
+                case 'workout': renderWorkout(); break;
+                case 'activity': renderActivity(); break;
+                case 'money': renderMoney(); break;
+                case 'analytics': renderAnalytics(); initCharts(); break;
+                case 'profile': renderProfile(); break;
+            }
+        }
+        function switchTab(tabId) { 
+            const tabContents = document.querySelectorAll('.tab-content');
+            navButtons.forEach(btn => { 
+                const isActive = btn.dataset.tab === tabId; 
+                btn.classList.toggle('text-white', isActive); 
+                btn.classList.toggle('bg-cyan-500/20', isActive); 
+                btn.classList.toggle('text-slate-400', !isActive); 
+                btn.classList.toggle('hover:bg-slate-700/50', !isActive); 
+            });
+            tabContents.forEach(content => content.classList.toggle('active', content.id === tabId));
+            renderTabContent(tabId);
+        }
+        function initCharts() {
+            const chartOptions = {
+                responsive: true, maintainAspectRatio: false,
+                plugins: { legend: { labels: { color: '#e2e8f0' } } },
+                scales: {
+                    y: { beginAtZero: true, ticks: { color: '#a0aec0' }, grid: { color: 'rgba(149, 165, 189, 0.1)' } },
+                    x: { ticks: { color: '#a0aec0' }, grid: { color: 'rgba(149, 165, 189, 0.1)' } }
+                }
+            };
+
+            const destroyChart = (chart) => { if(chart) chart.destroy(); };
+            destroyChart(caloriesChart);
+            destroyChart(expensesChart);
+            destroyChart(caloriesTrendChart);
+            destroyChart(expensesTrendChart);
+            destroyChart(expenseCategoriesChart);
+            destroyChart(calorieSourcesChart);
+
+            if (document.getElementById('calories-chart')) {
+                 const caloriesCtx = document.getElementById('calories-chart').getContext('2d');
+                caloriesChart = new Chart(caloriesCtx, {
+                    type: 'bar',
+                    data: {
+                    labels: ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun'],
+                    datasets: [
+                        { label: 'Consumed', data: [1200, 1500, 1800, 1400, 2000, 1600, 1300], backgroundColor: 'rgba(74, 222, 128, 0.7)', borderColor: 'rgba(74, 222, 128, 1)', borderWidth: 1 },
+                        { label: 'Burned', data: [800, 900, 1000, 700, 1200, 950, 850], backgroundColor: 'rgba(239, 68, 68, 0.7)', borderColor: 'rgba(239, 68, 68, 1)', borderWidth: 1 }
+                    ]
+                    },
+                    options: chartOptions
+                });
+            }
+           
+            if (document.getElementById('expenses-chart')) {
+                 const expensesCtx = document.getElementById('expenses-chart').getContext('2d');
+                expensesChart = new Chart(expensesCtx, {
+                    type: 'line',
+                    data: {
+                    labels: ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun'],
+                    datasets: [{ label: 'Expenses (₹)', data: [800, 1200, 600, 1500, 900, 2000, 700], borderColor: 'rgba(56, 189, 248, 1)', backgroundColor: 'rgba(56, 189, 248, 0.1)', borderWidth: 3, fill: true, tension: 0.4 }]
+                    },
+                    options: chartOptions
+                });
+            }
+            
+             const trendOptions = { ...chartOptions, plugins: { legend: { display: false } }, scales: { ...chartOptions.scales, x: { ...chartOptions.scales.x, ticks: { display: false } } }};
+
+            if (document.getElementById('calories-trend-chart')) {
+                const caloriesTrendCtx = document.getElementById('calories-trend-chart').getContext('2d');
+                caloriesTrendChart = new Chart(caloriesTrendCtx, {
+                    type: 'line',
+                    data: {
+                    labels: Array.from({length: 30}, (_, i) => `Day ${i+1}`),
+                    datasets: [{ label: 'Net Calories', data: Array.from({length: 30}, () => Math.floor(Math.random() * 1000) - 500), borderColor: 'rgba(139, 92, 246, 1)', backgroundColor: 'rgba(139, 92, 246, 0.1)', borderWidth: 2, fill: true, tension: 0.4 }]
+                    },
+                    options: trendOptions
+                });
+            }
+
+            if(document.getElementById('expenses-trend-chart')) {
+                 const expensesTrendCtx = document.getElementById('expenses-trend-chart').getContext('2d');
+                expensesTrendChart = new Chart(expensesTrendCtx, {
+                    type: 'line',
+                    data: {
+                    labels: Array.from({length: 30}, (_, i) => `Day ${i+1}`),
+                    datasets: [{ label: 'Expenses (₹)', data: Array.from({length: 30}, () => Math.floor(Math.random() * 2000)), borderColor: 'rgba(56, 189, 248, 1)', backgroundColor: 'rgba(56, 189, 248, 0.1)', borderWidth: 2, fill: true, tension: 0.4 }]
+                    },
+                    options: trendOptions
+                });
+            }
+           
+            const doughnutOptions = {
+                responsive: true, maintainAspectRatio: false,
+                plugins: { legend: { position: 'bottom', labels: { color: '#e2e8f0' } } }
+            };
+
+            if (document.getElementById('expense-categories-chart')) {
+                const expenseCategoriesCtx = document.getElementById('expense-categories-chart').getContext('2d');
+                expenseCategoriesChart = new Chart(expenseCategoriesCtx, {
+                    type: 'doughnut',
+                    data: {
+                    labels: ['Food', 'Transport', 'Entertainment', 'Shopping', 'Utilities', 'Other'],
+                    datasets: [{ data: [30, 20, 15, 15, 10, 10], backgroundColor: ['#38bdf8', '#4ade80', '#a78bfa', '#facc15', '#fb923c', '#f87171'], borderWidth: 0 }]
+                    },
+                    options: doughnutOptions
+                });
+            }
+            
+            if (document.getElementById('calorie-sources-chart')) {
+                const calorieSourcesCtx = document.getElementById('calorie-sources-chart').getContext('2d');
+                calorieSourcesChart = new Chart(calorieSourcesCtx, {
+                    type: 'doughnut',
+                    data: {
+                    labels: ['Carbs', 'Protein', 'Fat'],
+                    datasets: [{ data: [50, 25, 25], backgroundColor: ['#facc15', '#4ade80', '#f87171'], borderWidth: 0 }]
+                    },
+                    options: doughnutOptions
+                });
+            }
+        }
+        function openEndDayModal() { 
+            const summaryEl = document.getElementById('end-day-summary');
+            const { consumed, burned, balance, moneySpent } = renderDailyLog();
+            summaryEl.innerHTML = `
+                <p><strong>Total Calories Consumed:</strong> <span class="text-green-400 font-semibold">${consumed} kcal</span></p>
+                <p><strong>Total Calories Burned:</strong> <span class="text-red-400 font-semibold">${burned} kcal</span></p>
+                <p><strong>Net Calorie Balance:</strong> <span class="text-cyan-400 font-semibold">${balance} kcal</span></p>
+                <hr class="border-slate-700 my-4">
+                <p><strong>Total Money Spent:</strong> <span class="text-amber-300 font-semibold">₹${moneySpent}</span></p>
+            `;
+            endDayModal.classList.remove('hidden');
+        }
+        function closeEndDayModal() { 
+            endDayModal.classList.add('hidden');
+        }
+        function calculateCalorieGoal(weight, height, age, goal) { 
+            const bmr = (10 * weight) + (6.25 * height) - (5 * age) + 5; // Mifflin-St Jeor Equation
+            const tdee = bmr * 1.375; // Assuming lightly active
+            if (goal === 'lose') return Math.round(tdee - 500);
+            if (goal === 'gain') return Math.round(tdee + 300);
+            return Math.round(tdee);
+        }
+        
+        function handleCalculatorSubmit(e) {
+             e.preventDefault();
+            const age = parseInt(document.getElementById('calc-age').value);
+            const weight = parseInt(document.getElementById('calc-weight').value);
+            const height = parseInt(document.getElementById('calc-height').value);
+            const activity = parseFloat(document.getElementById('calc-activity').value);
+
+            if (!age || !weight || !height || !activity) {
+                showToast('Please fill all calculator fields.', 'error');
+                return;
+            }
+
+            const bmr = (10 * weight) + (6.25 * height) - (5 * age) + 5;
+            const tdee = bmr * activity;
+            const resultsEl = document.getElementById('calculator-results');
+            resultsEl.innerHTML = `
+                <p class="text-slate-400">Maintenance: <span class="font-bold text-white">${Math.round(tdee)} kcal/day</span></p>
+                <p class="text-slate-400">Weight Loss: <span class="font-bold text-white">${Math.round(tdee - 500)} kcal/day</span></p>
+                <p class="text-slate-400">Weight Gain: <span class="font-bold text-white">${Math.round(tdee + 300)} kcal/day</span></p>
+            `;
+            resultsEl.classList.remove('hidden');
+        }
+        function handleLogout() {
+            localStorage.removeItem('userData');
+            localStorage.removeItem('dailyLog');
+            localStorage.removeItem('historicalLog'); // Clear historical data on logout
+            window.location.reload();
+        }
+        function toggleProfileEdit() {
+            document.getElementById('profile-stats-display').classList.toggle('hidden');
+            document.getElementById('profile-stats-edit').classList.toggle('hidden');
+            document.getElementById('edit-profile-btn').classList.toggle('hidden');
+            document.getElementById('save-profile-btn').classList.toggle('hidden');
+            
+            const editGoalSelector = document.getElementById('edit-goal-selector');
+            const currentGoal = userData.goal;
+            
+            editGoalSelector.querySelectorAll('.goal-btn').forEach(btn => {
+                btn.classList.toggle('active', btn.dataset.goal === currentGoal);
+            });
+
+             editGoalSelector.addEventListener('click', (e) => {
+                if(e.target.tagName === 'BUTTON') {
+                    // Visually update active button
+                    editGoalSelector.querySelectorAll('.goal-btn').forEach(b => b.classList.remove('active'));
+                    e.target.classList.add('active');
+                    // Store the selected goal on the save button for retrieval
+                    document.getElementById('save-profile-btn').dataset.newGoal = e.target.dataset.goal;
+                }
+            });
+            // Set initial goal on save button
+            document.getElementById('save-profile-btn').dataset.newGoal = currentGoal;
+        }
+        function handleProfileSave() {
+            userData.weight = parseInt(document.getElementById('edit-weight').value) || userData.weight;
+            userData.targetWeight = parseInt(document.getElementById('edit-target-weight').value) || userData.targetWeight;
+            userData.budget = parseInt(document.getElementById('edit-budget').value) || userData.budget;
+            userData.goal = document.getElementById('save-profile-btn').dataset.newGoal || userData.goal;
+            
+            userData.calorieGoal = calculateCalorieGoal(userData.weight, userData.height, userData.age, userData.goal);
+
+            localStorage.setItem('userData', JSON.stringify(userData));
+            MONTHLY_BUDGET = userData.budget;
+            DAILY_CALORIE_GOAL = userData.calorieGoal;
+            
+            showToast('Profile updated!', 'success');
+            renderProfile(); // This re-renders the profile, which implicitly hides the edit view.
+        }
+
+        function animateCounters() {
+            const counters = document.querySelectorAll('.counter');
+            counters.forEach(counter => {
+                const target = +counter.getAttribute('data-target');
+                const prefix = counter.getAttribute('data-prefix') || '';
+                const duration = 1000;
+                let start = 0;
+                const end = target;
+                if (end === 0) {
+                    counter.textContent = prefix + '0';
+                    return;
+                }
+                const increment = end / (duration / 10);
+                
+                const updateCounter = () => {
+                    start += increment;
+                    if (start < end) {
+                        counter.textContent = prefix + Math.ceil(start).toLocaleString();
+                        setTimeout(updateCounter, 10);
+                    } else {
+                        counter.textContent = prefix + end.toLocaleString();
+                    }
+                };
+                updateCounter();
+            });
+        }
+        
+        // --- NEW Reporting Function ---
+        function generateReport(days) {
+            const now = new Date();
+            const pastDate = new Date().setDate(now.getDate() - days);
+
+            const reportData = historicalLog.filter(item => new Date(item.timestamp) > pastDate);
+
+            if (reportData.length === 0) {
+                showToast(`No data found for the last ${days} days.`, 'error');
+                return;
+            }
+
+            const totalSpent = reportData.filter(i => i.type === 'expense').reduce((sum, i) => sum + i.amount, 0);
+            const totalCaloriesConsumed = reportData.filter(i => i.type === 'food').reduce((sum, i) => sum + i.calories, 0);
+            const totalCaloriesBurned = reportData.filter(i => ['workout', 'activity'].includes(i.type)).reduce((sum, i) => sum + i.calories, 0);
+            
+            const uniqueDays = [...new Set(reportData.map(item => new Date(item.timestamp).toDateString()))].length;
+            const avgCaloriesConsumed = totalCaloriesConsumed / uniqueDays || 0;
+            const avgCaloriesBurned = totalCaloriesBurned / uniqueDays || 0;
+            
+            const today = new Date().toISOString().split('T')[0];
+            const period = days === 7 ? 'Weekly' : 'Monthly';
+            let reportContent = `
+FitTrack AI - ${period} Report
+Generated on: ${today}
+User: ${userData.name}
+--------------------------------------------------
+
+### OVERALL SUMMARY (${days} Days) ###
+--------------------------------------------------
+- Total Money Spent: ₹${totalSpent.toFixed(2)}
+- Total Calories Consumed: ${totalCaloriesConsumed.toFixed(0)} kcal
+- Total Calories Burned: ${totalCaloriesBurned.toFixed(0)} kcal
+- Average Daily Calories (Consumed): ${avgCaloriesConsumed.toFixed(0)} kcal/day
+- Average Daily Calories (Burned): ${avgCaloriesBurned.toFixed(0)} kcal/day
+
+--------------------------------------------------
+### DETAILED LOG ###
+--------------------------------------------------
+`;
+
+            // Group items by date for detailed log
+            const groupedByDate = reportData.reduce((acc, item) => {
+                const date = new Date(item.timestamp).toDateString();
+                if (!acc[date]) acc[date] = [];
+                acc[date].push(item);
+                return acc;
+            }, {});
+
+            for (const date in groupedByDate) {
+                reportContent += `\n[ ${date} ]\n`;
+                groupedByDate[date].forEach(item => {
+                    if(item.type === 'food') reportContent += `  - Ate ${item.name} (${item.calories} kcal)\n`;
+                    if(item.type === 'expense') reportContent += `  - Spent ₹${item.amount} on ${item.name} (${item.category})\n`;
+                    if(item.type === 'workout' || item.type === 'activity') reportContent += `  - Burned ${item.calories} kcal with ${item.name}\n`;
+                });
+            }
+
+            // Create a blob and trigger download
+            const blob = new Blob([reportContent.trim()], { type: 'text/plain' });
+            const link = document.createElement('a');
+            link.href = URL.createObjectURL(blob);
+            link.download = `${period}_Report_${today}.txt`;
+            document.body.appendChild(link);
+            link.click();
+            document.body.removeChild(link);
+            
+            showToast('Report downloaded successfully!', 'success');
+            
+            // Show the "Clear Data" button after a monthly report
+            if (days === 30) {
+                document.getElementById('clear-data-wrapper').classList.remove('hidden');
+            }
+        }
+
+
+        function initApp() {
+            onboardingFlow.classList.add('hidden');
+            onboardingFlow.classList.remove('flex');
+            appWrapper.classList.remove('hidden');
+            appWrapper.classList.add('flex');
+            
+            DAILY_CALORIE_GOAL = userData.calorieGoal;
+            MONTHLY_BUDGET = userData.budget;
+            // Load from local storage
+            dailyLog = JSON.parse(localStorage.getItem('dailyLog')) || [];
+            historicalLog = JSON.parse(localStorage.getItem('historicalLog')) || [];
+            
+            document.getElementById('user-initial-mobile').textContent = userData.name.charAt(0).toUpperCase();
+
+            navButtons.forEach(btn => btn.addEventListener('click', () => switchTab(btn.dataset.tab)));
+            [endDayBtnDesktop, endDayBtnMobile].forEach(btn => btn.addEventListener('click', openEndDayModal));
+            [closeModalBtn, cancelEndDayBtn].forEach(btn => btn.addEventListener('click', closeEndDayModal));
+            
+            // MODIFIED End Day logic to archive data
+            confirmEndDayBtn.addEventListener('click', () => { 
+                if (dailyLog.length > 0) {
+                    historicalLog.push(...dailyLog); // Add today's log to the history
+                    localStorage.setItem('historicalLog', JSON.stringify(historicalLog));
+                }
+                dailyLog = []; // Reset the daily log for the new day
+                localStorage.setItem('dailyLog', '[]');
+                showToast('Day archived. Ready for a new day!', 'success'); 
+                closeEndDayModal(); 
+                updateAll();
+            });
+            switchTab('dashboard');
+        }
+
+        // --- Onboarding Flow Logic ---
+        function setupOnboarding() {
+            const steps = document.querySelectorAll('.onboarding-step');
+            const progressBar = document.getElementById('progress-bar');
+            const progressText = document.getElementById('progress-text');
+            let currentStep = 0;
+
+            const updateStep = (newStepIndex) => {
+                const oldStep = steps[currentStep];
+                oldStep.classList.add('exiting');
+                
+                setTimeout(() => {
+                    oldStep.classList.remove('active', 'exiting');
+                    steps[newStepIndex].classList.add('active');
+                    
+                    progressBar.style.width = `${((newStepIndex + 1) / steps.length) * 100}%`;
+                    progressText.textContent = `Step ${newStepIndex + 1} of ${steps.length}`;
+                    currentStep = newStepIndex;
+                }, 500);
+            };
+
+            document.getElementById('next-step-1').addEventListener('click', () => updateStep(1));
+            document.getElementById('prev-step-2').addEventListener('click', () => updateStep(0));
+            document.getElementById('next-step-2').addEventListener('click', () => updateStep(2));
+            document.getElementById('prev-step-3').addEventListener('click', () => updateStep(1));
+
+            document.getElementById('goal-selector').addEventListener('click', (e) => {
+                if (e.target.tagName === 'BUTTON') {
+                    selectedGoal = e.target.dataset.goal;
+                    document.querySelectorAll('#goal-selector .goal-btn').forEach(btn => btn.classList.remove('active'));
+                    e.target.classList.add('active');
+                }
+            });
+
+            onboardingForm.addEventListener('submit', (e) => {
+                 e.preventDefault();
+                const name = document.getElementById('onboarding-name').value;
+                const age = parseInt(document.getElementById('onboarding-age').value);
+                const weight = parseInt(document.getElementById('onboarding-weight').value);
+                const height = parseInt(document.getElementById('onboarding-height').value);
+                const targetWeight = parseInt(document.getElementById('onboarding-target-weight').value);
+                const budget = parseInt(document.getElementById('onboarding-budget').value);
+
+                if (!name || !age || !weight || !height || !targetWeight || !budget) {
+                    showToast('Please fill in all fields.', 'error');
+                    return;
+                }
+
+                const calorieGoal = calculateCalorieGoal(weight, height, age, selectedGoal);
+                userData = { name, age, weight, height, targetWeight, budget, calorieGoal, goal: selectedGoal };
+                localStorage.setItem('userData', JSON.stringify(userData));
+                initApp();
+            });
+
+            steps[0].classList.add('active');
+        }
+
+        // --- Initializer ---
+        document.addEventListener('DOMContentLoaded', () => {
+            const storedUserData = localStorage.getItem('userData');
+            if (storedUserData) {
+                userData = JSON.parse(storedUserData);
+                initApp();
+            } else {
+                onboardingFlow.classList.remove('hidden');
+                onboardingFlow.classList.add('flex');
+                setupOnboarding();
+            }
+        });
+    </script>
+</body>
+</html>
